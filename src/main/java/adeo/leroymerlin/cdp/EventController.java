@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/events")
@@ -32,6 +33,7 @@ public class EventController {
     }
 
     @RequestMapping(value = "/{id}", method = RequestMethod.PUT)
-    public void updateEvent(@PathVariable Long id, @RequestBody Event event) {
+    public Optional<Event> updateEvent(@PathVariable Long id, @RequestBody Event event) {
+        return eventService.update(id, event);
     }
 }
