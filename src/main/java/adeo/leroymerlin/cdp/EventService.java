@@ -3,8 +3,11 @@ package adeo.leroymerlin.cdp;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.transaction.Transactional;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class EventService {
@@ -26,6 +29,7 @@ public class EventService {
         return eventRepository.findAllBy();
     }
 
+    @Transactional
     public void delete(Long id) {
         Optional<Event> event = eventRepository.findById(id);
 
@@ -37,11 +41,54 @@ public class EventService {
 
     public List<Event> getFilteredEvents(String query) {
         List<Event> events = eventRepository.findAllBy();
-        // Filter the events list in pure JAVA here
 
-        return events;
+        return events.stream().map(event->toEventWithFilteredBands(event,query))
+                .filter(event -> !event.getBands().isEmpty())
+                .collect(Collectors.toList());
+
     }
 
+    public Event toEventWithFilteredBands(Event event,String query) {
+
+        Set<Band> filteredBands = getFilteredBands(event.getBands(),query);
+        int eventBandsSize = filteredBands.stream().mapToInt(band -> band.getMembers().size()).sum();
+        int eventElementsCount = eventBandsSize + filteredBands.size();
+        String titleWithCount = event.getTitle() + "[" + eventElementsCount + "]";
+
+        Event updatedEvent = new Event();
+        updatedEvent.setId(event.getId());
+        updatedEvent.setTitle(titleWithCount);
+        updatedEvent.setComment(event.getComment());
+        updatedEvent.setNbStars(event.getNbStars());
+        updatedEvent.setBands(filteredBands);
+        updatedEvent.setImgUrl(event.getImgUrl());
+        return updatedEvent;
+
+    }
+
+    public Set<Band> getFilteredBands(Set<Band> bands,String query) {
+        return bands.stream().map(band->toBandWithFilteredMembers(band,query) )
+                .filter(band -> !band.getMembers().isEmpty())
+                .collect(Collectors.toSet());
+    }
+
+    public Band toBandWithFilteredMembers(Band band,String query) {
+        Set<Member> filteredMembers = getFilteredMembers(band,query);
+        var nameWithCount = band.getName() + "["+filteredMembers.size()+"]";
+        Band updatedBand = new Band();
+        updatedBand.setName(nameWithCount);
+        updatedBand.setMembers(filteredMembers);
+        return updatedBand;
+    }
+
+    public  Set<Member> getFilteredMembers(Band band,String query) {
+        return band.getMembers()
+                .stream()
+                .filter(member -> member.getName().contains(query))
+                .collect(Collectors.toSet());
+    }
+
+    @Transactional
     public Optional<Event> update(Long id, Event updatedEvent) {
         return eventRepository.findById(id).map(event -> {
             event.setComment(updatedEvent.getComment());
