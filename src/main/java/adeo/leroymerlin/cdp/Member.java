@@ -13,6 +13,9 @@ public class Member {
 
     String name;
 
+    public Member() {
+    }
+
     public String getName() {
         return name;
     }
