@@ -12,8 +12,14 @@ public class Band {
 
     private String name;
 
-    @OneToMany(fetch=FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+    @JoinTable(name = "band_members",
+            joinColumns = @JoinColumn(name = "band_id"),
+            inverseJoinColumns = @JoinColumn(name = "members_id"))
     private Set<Member> members;
+
+    public Band() {
+    }
 
     public Set<Member> getMembers() {
         return members;
