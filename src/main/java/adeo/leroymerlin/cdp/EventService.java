@@ -10,10 +10,16 @@ import java.util.Optional;
 public class EventService {
 
     private final EventRepository eventRepository;
+    private final BandRepository bandRepository;
+    private final MemberRepository memberRepository;
 
     @Autowired
-    public EventService(EventRepository eventRepository) {
+    public EventService(EventRepository eventRepository,
+                        BandRepository bandRepository,
+                        MemberRepository memberRepository) {
         this.eventRepository = eventRepository;
+        this.bandRepository = bandRepository;
+        this.memberRepository = memberRepository;
     }
 
     public List<Event> getEvents() {
