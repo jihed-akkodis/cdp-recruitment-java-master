@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -91,31 +92,38 @@ public class EventService {
     @Transactional
     public Optional<Event> update(Long id, Event updatedEvent) {
         return eventRepository.findById(id).map(event -> {
-            event.setComment(updatedEvent.getComment());
-            event.setImgUrl(updatedEvent.getImgUrl());
-            event.setTitle(updatedEvent.getTitle());
-            event.setNbStars(updatedEvent.getNbStars());
 
-            for (Band band : event.getBands()) {
-                Band eventBand = bandRepository.findByName(band.getName())
+        event.setTitle(updatedEvent.getTitle());
+        event.setImgUrl(updatedEvent.getImgUrl());
+        event.setNbStars(updatedEvent.getNbStars());
+        event.setComment(updatedEvent.getComment());
+
+        Set<Band> updatedBands = new HashSet<>();
+        for (Band band : updatedEvent.getBands()) {
+            Band eventBand = bandRepository.findByName(band.getName())
+                    .orElseGet(() -> {
+                        Band newBand = new Band();
+                        newBand.setName(band.getName());
+                        return bandRepository.save(newBand);
+                    });
+
+            Set<Member> updatedMembers = new HashSet<>();
+            for (Member member : band.getMembers()) {
+
+                Member bandMember = memberRepository.findByName(member.getName())
                         .orElseGet(() -> {
-                            Band newBand = new Band();
-                            newBand.setName(band.getName());
-                            return bandRepository.save(newBand);
+                            Member newMember = new Member();
+                            newMember.setName(member.getName());
+                            return memberRepository.save(newMember);
                         });
-                for (Member member : band.getMembers()) {
-                    Member bandMember = memberRepository.findByName(member.getName())
-                            .orElseGet(() -> {
-                                Member newMember = new Member();
-                                newMember.setName(member.getName());
-                                return memberRepository.save(newMember);
-                            });
-                    eventBand.getMembers().add(bandMember);
-                }
-                event.getBands().add(eventBand);
+                updatedMembers.add(bandMember);
             }
+            eventBand.setMembers(updatedMembers);
+            updatedBands.add(eventBand);
+        }
+        event.setBands(updatedBands);
 
-            return eventRepository.save(event);
+        return eventRepository.save(event);
 
         });
     }
